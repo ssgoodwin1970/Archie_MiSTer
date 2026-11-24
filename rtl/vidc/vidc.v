@@ -162,7 +162,10 @@ vidc_timing TIMING(
 );
 
 // this module does the math for a DMA channel
-vidc_dmachannel VIDEODMA (
+// MEGA65: 64-word FIFO instead of 8. HyperRAM round trips (and CPU accesses that
+// MEMC will not interrupt for DMA) take over 1 us, far longer than the original
+// 8-word FIFO lasts; a deeper FIFO keeps the screen fed.
+vidc_dmachannel #(.FIFO_SIZE(6)) VIDEODMA (
 
 	.rst_cpu	   ( flybk_sys | rst_i | rst_vid_cpu_i ),
 	.rst_dev	   ( flybk | rst_vid_i ),
