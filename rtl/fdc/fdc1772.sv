@@ -1052,10 +1052,14 @@ module fdc1772_dpram #(ADDRWIDTH=9)
 	input [ADDRWIDTH-1:0] address_b,
 	input           [7:0] data_b, 
 	input                 wren_b,
-	output     reg  [7:0] q_b
+	output          [7:0] q_b
 );
 
-logic [1:0][7:0] ram[0:(1<<(ADDRWIDTH-1))-1];
+// MEGA65/Vivado: true dual port RAM, 16 bit on both ports, port B writes a
+// single byte via byte enable and selects the byte on read. Same behaviour as
+// the original mixed-width version (write-first, 1 cycle latency), but in a
+// form Vivado maps onto block RAM.
+reg [15:0] ram[0:(1<<(ADDRWIDTH-1))-1];
 
 always@(posedge clock) begin
 	if(wren_a) begin
@@ -1067,14 +1071,22 @@ always@(posedge clock) begin
 	end
 end
 
+reg [15:0] qb_word;
+reg        qb_sel;
+reg        qb_wr;
+reg  [7:0] qb_dat;
+
 always@(posedge clock) begin
 	if(wren_b) begin
-		ram[address_b[ADDRWIDTH-1:1]][address_b[0]] <= data_b;
-		q_b <= data_b;
+		if(address_b[0]) ram[address_b[ADDRWIDTH-1:1]][15:8] <= data_b;
+		else             ram[address_b[ADDRWIDTH-1:1]][7:0]  <= data_b;
 	end
-	else begin
-		q_b <= ram[address_b[ADDRWIDTH-1:1]][address_b[0]];
-	end
+	qb_word <= ram[address_b[ADDRWIDTH-1:1]];
+	qb_sel  <= address_b[0];
+	qb_wr   <= wren_b;
+	qb_dat  <= data_b;
 end
+
+assign q_b = qb_wr ? qb_dat : (qb_sel ? qb_word[15:8] : qb_word[7:0]);
 
 endmodule
