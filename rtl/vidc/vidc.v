@@ -183,7 +183,9 @@ vidc_dmachannel #(.FIFO_SIZE(6)) VIDEODMA (
 );
 
 // this module does the math for a DMA channel
-vidc_dmachannel #(.FIFO_SIZE(2)) CURSORDMA (
+// MEGA65: cursor FIFO 8 words instead of 4 (refills no longer have to arrive
+// within the few hundred ns a 4-word FIFO allowed while the CPU holds the bus).
+vidc_dmachannel #(.FIFO_SIZE(3)) CURSORDMA (
 
 	.rst_cpu		( flybk_sys | rst_i | rst_vid_cpu_i ),
 	.rst_dev		( flybk | rst_vid_i ),
